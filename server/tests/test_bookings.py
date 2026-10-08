@@ -1,70 +1,81 @@
+import uuid
+from decimal import Decimal
 from fastapi.testclient import TestClient
+from sqlalchemy import delete
+from sqlalchemy.orm import Session
+
+from app.db.database import SessionLocal
 from app.main import app
+from app.models.booking import Booking
 
 client = TestClient(app)
 
 
-def test_create_demo_booking():
-    payload = {
-        "quantity": 3,
-        "event_date": "15 October 2026",
-        "payment_method": "online"
-    }
-    response = client.post("/api/bookings/demo", json=payload)
-    assert response.status_code == 200
-    json_data = response.json()
-    assert json_data["success"] is True
-    assert json_data["data"]["quantity"] == 3
-    assert json_data["data"]["total_amount"] == 600.0
-    assert json_data["data"]["event_date"] == "15 October 2026"
-    assert json_data["data"]["payment_method"] == "ONLINE"
-    assert json_data["data"]["booking_id"].startswith("SGNM-2026-")
+def test_get_nonexistent_booking():
+    response = client.get("/api/bookings/NON-EXISTENT-ID-1234")
+    assert response.status_code == 404
+    data = response.json()
+    assert "not found" in data["detail"].lower()
 
 
-def test_create_demo_booking_cash():
-    payload = {
-        "quantity": 5,
-        "event_date": "18 October 2026",
-        "payment_method": "cash"
-    }
-    response = client.post("/api/bookings/demo", json=payload)
-    assert response.status_code == 200
-    json_data = response.json()
-    assert json_data["success"] is True
-    assert json_data["data"]["quantity"] == 5
-    assert json_data["data"]["total_amount"] == 1000.0
-    assert json_data["data"]["payment_method"] == "CASH"
+def test_get_booking_success():
+    db: Session = SessionLocal()
+    test_id = f"TEST-BK-{uuid.uuid4().hex[:8]}"
+    try:
+        booking = Booking(
+            booking_id=test_id,
+            venue="Bardoli Ground",
+            event_date="2026-10-12",
+            quantity=2,
+            ticket_price=Decimal("200.00"),
+            total_amount=Decimal("400.00"),
+            payment_method="online",
+            payment_status="paid",
+        )
+        db.add(booking)
+        db.commit()
+
+        response = client.get(f"/api/bookings/{test_id}")
+        assert response.status_code == 200
+        res_data = response.json()
+        assert res_data["success"] is True
+        assert res_data["data"]["booking_id"] == test_id
+        assert res_data["data"]["quantity"] == 2
+        assert res_data["data"]["event_date"] == "2026-10-12"
+        assert res_data["data"]["payment_status"] == "paid"
+    finally:
+        db.execute(delete(Booking).where(Booking.booking_id == test_id))
+        db.commit()
+        db.close()
 
 
-def test_create_demo_booking_invalid_quantity():
-    payload = {
-        "quantity": 15,
-        "event_date": "12 October 2026",
-        "payment_method": "online"
-    }
-    response = client.post("/api/bookings/demo", json=payload)
-    assert response.status_code in (400, 422)
+def test_download_ticket_pdf_nonexistent():
+    response = client.get("/api/bookings/NON-EXISTENT-ID-1234/ticket.pdf")
+    assert response.status_code == 404
 
 
-def test_create_demo_booking_invalid_payment_method():
-    payload = {
-        "quantity": 2,
-        "event_date": "12 October 2026",
-        "payment_method": "upi"
-    }
-    response = client.post("/api/bookings/demo", json=payload)
-    assert response.status_code == 400
+def test_download_ticket_pdf_success():
+    db: Session = SessionLocal()
+    test_id = f"TEST-PDF-{uuid.uuid4().hex[:8]}"
+    try:
+        booking = Booking(
+            booking_id=test_id,
+            venue="Bardoli Ground",
+            event_date="2026-10-15",
+            quantity=3,
+            ticket_price=Decimal("200.00"),
+            total_amount=Decimal("600.00"),
+            payment_method="online",
+            payment_status="paid",
+        )
+        db.add(booking)
+        db.commit()
 
-
-def test_download_demo_ticket_pdf():
-    payload = {"quantity": 5, "event_date": "15 October 2026", "payment_method": "online"}
-    res = client.post("/api/bookings/demo", json=payload)
-    assert res.status_code == 200
-    booking_id = res.json()["data"]["booking_id"]
-
-    pdf_res = client.get(f"/api/bookings/demo/{booking_id}/ticket.pdf")
-    assert pdf_res.status_code == 200
-    assert pdf_res.headers["content-type"] == "application/pdf"
-    assert len(pdf_res.content) > 100
-    assert b"15 October 2026" in pdf_res.content
-    assert b"1000.00" in pdf_res.content
+        response = client.get(f"/api/bookings/{test_id}/ticket.pdf")
+        assert response.status_code == 200
+        assert response.headers["content-type"] == "application/pdf"
+        assert len(response.content) > 100
+    finally:
+        db.execute(delete(Booking).where(Booking.booking_id == test_id))
+        db.commit()
+        db.close()

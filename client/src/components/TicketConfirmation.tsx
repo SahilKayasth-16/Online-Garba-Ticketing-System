@@ -48,7 +48,7 @@ export const TicketConfirmation: React.FC<TicketConfirmationProps> = ({
 
       <h2 className="confirmation-title">Booking Confirmed!</h2>
       <p className="confirmation-sub">
-        Swarnim Group Navratri Mahotsav 2026
+        Online Garba Ticketting System 2026
       </p>
 
       {/* Pass Details Card */}

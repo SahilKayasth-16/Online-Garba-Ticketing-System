@@ -1,7 +1,7 @@
 """
 Database seed module.
 
-The Swarnim Group Navratri Mahotsav application does not use
+The Online Garba Ticketting System application does not use
 automatic/demo seed data.
 
 All application data must come from the actual database and

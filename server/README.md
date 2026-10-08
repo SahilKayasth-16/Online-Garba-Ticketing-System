@@ -1,4 +1,4 @@
-# Swarnim Group Online Garba Ticketing System — Backend API
+# Online Garba Ticketing System — Backend API
 
 FastAPI backend foundation integrated with PostgreSQL 18.3 (`swarnim_garba`), SQLAlchemy 2.x, and Alembic migrations.
 

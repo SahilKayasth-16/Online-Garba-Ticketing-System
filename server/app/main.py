@@ -32,7 +32,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title=settings.APP_NAME,
-    description="Backend API for Swarnim Group Online Garba Ticketing System",
+    description="Backend API for Online Group Online Garba Ticketing System",
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",

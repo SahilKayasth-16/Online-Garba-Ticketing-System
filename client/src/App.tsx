@@ -152,11 +152,11 @@ function MainApp() {
       <footer className="app-footer">
         <div>
           <p className="app-footer-title">
-            SWARNIM GROUP NAVRATRI MAHOTSAV 2026
+            ONLINE GARBA TICKETTING SYSTEM 2026
           </p>
-          <p>P.R.B Arts & P.G.R Commerce College Ground, Station Road, Bardoli, Surat</p>
+          <p>Bardoli, Surat, Gujarat</p>
           <p style={{ marginTop: '0.35rem', fontSize: '0.75rem', opacity: 0.7 }}>
-            © 2026 Swarnim Group Navratri Mahotsav. All rights reserved. Developed by Sahil Kayasth.
+            © Online Garba Ticketting System 2026. All rights reserved. Developed by Sahil Kayasth.
           </p>
         </div>
       </footer>

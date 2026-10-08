@@ -11,7 +11,7 @@ export const EventLogoPlaceholder: React.FC = () => {
         <div className="event-logo-placeholder-text">
           MAIN EVENT LOGO
         </div>
-        <p className="event-logo-subtext">Swarnim Group Identity</p>
+        <p className="event-logo-subtext">Organizer Group Identity</p>
       </div>
     </div>
   );

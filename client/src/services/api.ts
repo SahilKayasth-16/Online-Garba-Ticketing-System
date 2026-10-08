@@ -7,7 +7,9 @@ import type {
   RegisterRequest,
   TicketType,
   UserPublic,
+  DailyCapacity,
 } from "../types";
+
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL || "http://localhost:8000/api";
@@ -224,4 +226,73 @@ export async function getSuperAdminStatus(): Promise<SuperAdminStatus> {
       message: null,
     };
   }
+}
+
+export async function getDailyCapacities(): Promise<DailyCapacity[]> {
+  const response = await fetch(`${API_BASE_URL}/capacities`);
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(
+      errorData.detail ||
+        `Failed to retrieve ticket capacities (Status ${response.status})`,
+    );
+  }
+
+  const result: ApiResponse<DailyCapacity[]> = await response.json();
+
+  if (!result.success) {
+    throw new Error(result.message || "Failed to retrieve ticket capacities.");
+  }
+
+  return result.data;
+}
+
+export async function updateDailyCapacity(
+  eventDate: string,
+  capacity: number,
+  token?: string | null,
+): Promise<DailyCapacity> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(
+    `${API_BASE_URL}/capacities/${encodeURIComponent(eventDate)}`,
+    {
+      method: "PUT",
+      headers,
+      body: JSON.stringify({ capacity }),
+    },
+  );
+
+  const resData = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    if (response.status === 403) {
+      throw new Error(
+        resData.detail || "Forbidden: Only Super Admin can modify daily ticket capacity.",
+      );
+    }
+    if (response.status === 401) {
+      throw new Error("Authentication required. Please log in as Super Admin.");
+    }
+    throw new Error(
+      resData.detail ||
+        resData.message ||
+        `Failed to update daily capacity (Status ${response.status})`,
+    );
+  }
+
+  const result: ApiResponse<DailyCapacity> = resData;
+
+  if (!result.success && !result.data) {
+    throw new Error(result.message || "Failed to update daily capacity.");
+  }
+
+  return result.data;
 }

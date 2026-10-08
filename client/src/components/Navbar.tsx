@@ -42,11 +42,11 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigateHome, onNavigateBookin
           className="navbar-brand"
         >
           <div className="navbar-logo-badge">
-            SG
+            OG
           </div>
           <div>
             <h1 className="navbar-title gold-gradient-text">
-              SWARNIM GROUP
+              ONLINE GARBA 
             </h1>
             <p className="navbar-subtitle">
               Navratri Mahotsav 2026

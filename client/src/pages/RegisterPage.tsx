@@ -95,7 +95,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
           <span className="auth-badge">PORTAL REGISTRATION</span>
           <h2 className="auth-title">Create Account</h2>
           <p className="auth-subtitle">
-            Swarnim Group Navratri Mahotsav 2026 Staff Portal
+            Online Garba Ticketting System 2026 Staff Portal
           </p>
         </div>
 
@@ -149,7 +149,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
               id="reg-email"
               type="email"
               className="auth-input"
-              placeholder="e.g. staff@swarnim.com"
+              placeholder="e.g. staff@test.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required

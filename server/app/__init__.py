@@ -1,3 +1,3 @@
 """
-Swarnim Garba Ticketing System Application Package
+Online Garba Ticketing System Application Package
 """

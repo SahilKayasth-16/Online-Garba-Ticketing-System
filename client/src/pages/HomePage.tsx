@@ -17,7 +17,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onGoToBooking }) => {
           <EventLogoPlaceholder />
 
           <h1 className="hero-title">
-            SWARNIM GROUP NAVRATRI MAHOTSAV 2026
+            ONLINE GARBA TICKETTING SYSTEM
           </h1>
 
           <p className="hero-subtitle">
@@ -75,7 +75,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onGoToBooking }) => {
             <div className="event-detail-content">
               <span className="event-detail-label">Venue Address</span>
               <span className="event-detail-value">
-                P.R.B Arts & P.G.R Commerce College Ground, Station Road, Bardoli, Surat
+              Bardoli, Surat, Gujarat
               </span>
             </div>
           </div>
@@ -88,7 +88,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onGoToBooking }) => {
               </svg>
             </div>
             <div className="event-detail-content">
-              <span className="event-detail-label">Pass Pricing</span>
+              <span className="event-detail-label">Tickets Pricing</span>
               <span className="event-detail-value event-detail-value-gold">
                 Tickets starting from ₹200
               </span>

@@ -13,11 +13,11 @@ def _gen_phone():
 def test_register_user_success():
     unique_email = f"test_user_{uuid.uuid4().hex[:8]}@example.com"
     payload = {
-        "name": "Super Admin User",
+        "name": "Event Admin User",
         "contact_number": _gen_phone(),
         "email": unique_email,
         "password": "secretPassword123",
-        "role": "super_admin",
+        "role": "event_admin",
     }
     response = client.post("/api/auth/register", json=payload)
     assert response.status_code == 201
@@ -26,7 +26,8 @@ def test_register_user_success():
     assert "access_token" in data["data"]
     assert data["data"]["token_type"] == "bearer"
     assert data["data"]["user"]["email"] == unique_email
-    assert data["data"]["user"]["role"] == "super_admin"
+    assert data["data"]["user"]["role"] == "event_admin"
+
 
 
 def test_register_duplicate_email():

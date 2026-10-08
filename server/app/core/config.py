@@ -7,7 +7,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 
 class Settings(BaseSettings):
-    APP_NAME: str = "Swarnim Group Online Garba Ticketing System"
+    APP_NAME: str = "Online Garba Ticketing System"
     APP_ENV: str = "development"
     DEBUG: bool = True
     HOST: str = "127.0.0.1"

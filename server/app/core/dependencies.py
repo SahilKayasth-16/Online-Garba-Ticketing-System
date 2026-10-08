@@ -60,5 +60,20 @@ def get_current_user(
     return user
 
 
-__all__ = ["get_db", "get_current_user"]
+def require_super_admin(
+    current_user: User = Depends(get_current_user),
+) -> User:
+    """
+    Enforces that the current authenticated user has the 'super_admin' role.
+    Raises 403 Forbidden if called by any user with a different role.
+    """
+    if current_user.role != "super_admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Forbidden: Only Super Admin is authorized to modify daily ticket capacity.",
+        )
+    return current_user
+
+
+__all__ = ["get_db", "get_current_user", "require_super_admin"]
 

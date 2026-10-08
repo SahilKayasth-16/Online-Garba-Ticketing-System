@@ -10,5 +10,5 @@ def health_check():
     """
     return {
         "success": True,
-        "message": "Swarnim Garba Ticketing API is running.",
+        "message": "Online Garba Ticketing API is running.",
     }

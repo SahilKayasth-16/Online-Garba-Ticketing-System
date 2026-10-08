@@ -77,7 +77,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
           <span className="auth-badge">STAFF PORTAL</span>
           <h2 className="auth-title">Account Login</h2>
           <p className="auth-subtitle">
-            Swarnim Group Navratri Mahotsav 2026 Management
+            Online Garba Ticketting System 2026 Management
           </p>
         </div>
 
@@ -101,7 +101,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
               id="login-email"
               type="email"
               className="auth-input"
-              placeholder="operator@swarnim.com"
+              placeholder="operator@test.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required

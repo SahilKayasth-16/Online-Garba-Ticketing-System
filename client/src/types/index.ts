@@ -81,3 +81,20 @@ export interface ToastMessage {
   title?: string;
   message: string;
 }
+
+export interface DailyCapacity {
+  id: number;
+  event_date: string;
+  formatted_date: string;
+  day_number: number;
+  capacity: number;
+  sold: number;
+  remaining: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface UpdateCapacityPayload {
+  capacity: number;
+}
+

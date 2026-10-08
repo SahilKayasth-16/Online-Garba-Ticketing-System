@@ -133,7 +133,7 @@ def generate_ticket_pdf(booking: dict) -> bytes:
     # Event branding is static presentation content.
     elements.append(
         Paragraph(
-            "SWARNIM GROUP NAVRATRI MAHOTSAV 2026",
+            "Online Garba Ticketting System 2026",
             title_style,
         )
     )
@@ -177,7 +177,7 @@ def generate_ticket_pdf(booking: dict) -> bytes:
         [
             Paragraph("Event:", label_style),
             Paragraph(
-                "Swarnim Group Navratri Mahotsav 2026",
+                "Online Garba Ticketting System 2026",
                 value_style,
             ),
         ],
@@ -339,7 +339,7 @@ def generate_ticket_pdf(booking: dict) -> bytes:
     elements.append(Spacer(1, 20))
 
     footer_text = (
-        "This digital pass is generated for Swarnim Group "
+        "This digital pass is generated for Professional Garba "
         "Navratri Mahotsav 2026. Present this pass at the "
         "venue gate upon arrival."
     )

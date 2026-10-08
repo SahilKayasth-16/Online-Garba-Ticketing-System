@@ -152,7 +152,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({
         </h2>
 
         <p className="booking-form-sub">
-          Swarnim Group Navratri Mahotsav 2026 • 11th to 20th October 2026
+          Online Garba Ticketting System 2026 • 11th to 20th October 2026
         </p>
       </div>
 
@@ -444,7 +444,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({
             <span>Event:</span>
 
             <span className="final-summary-bold">
-              Swarnim Group Navratri Mahotsav 2026
+              Online Garba Ticketting System 2026
             </span>
           </div>
 
