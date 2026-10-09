@@ -10,6 +10,11 @@ interface BookingFormData {
 interface BookingFormProps {
   onSubmit: (data: BookingFormData) => void | Promise<void>;
   isProcessing: boolean;
+  externalSelectedDate?: string;
+  onDateChange?: (date: string) => void;
+  formTitle?: string;
+  formSubtitle?: string;
+  badgeLabel?: string;
 }
 
 const EVENT_START_DATE = "2026-10-11";
@@ -72,12 +77,25 @@ function formatIsoToReadableDate(isoDate: string): string {
 export const BookingForm: React.FC<BookingFormProps> = ({
   onSubmit,
   isProcessing,
+  externalSelectedDate,
+  onDateChange,
+  formTitle,
+  formSubtitle,
+  badgeLabel,
 }) => {
-  const [selectedDate, setSelectedDate] = useState<string>(EVENT_START_DATE);
+  const [selectedDate, setSelectedDate] = useState<string>(
+    externalSelectedDate || EVENT_START_DATE
+  );
   const [quantity, setQuantity] = useState<number>(1);
   const [paymentOption, setPaymentOption] =
     useState<"online" | "cash">("online");
   const [formError, setFormError] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (externalSelectedDate && externalSelectedDate !== selectedDate) {
+      setSelectedDate(externalSelectedDate);
+    }
+  }, [externalSelectedDate]);
 
   const isDateValid = useMemo(
     () => isDateInEventRange(selectedDate),
@@ -105,9 +123,9 @@ export const BookingForm: React.FC<BookingFormProps> = ({
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const newDate = event.target.value;
-
     setSelectedDate(newDate);
     setFormError(null);
+    onDateChange?.(newDate);
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -138,23 +156,25 @@ export const BookingForm: React.FC<BookingFormProps> = ({
 
   return (
     <form
+
       onSubmit={handleSubmit}
       className="booking-form-card"
       noValidate
     >
       <div className="booking-form-header">
         <span className="booking-form-badge">
-          ONLINE PASS RESERVATION
+          {badgeLabel || "ONLINE PASS RESERVATION"}
         </span>
 
         <h2 className="booking-form-title">
-          BOOK YOUR TICKETS
+          {formTitle || "BOOK YOUR TICKETS"}
         </h2>
 
         <p className="booking-form-sub">
-          Online Garba Ticketting System 2026 • 11th to 20th October 2026
+          {formSubtitle || "Online Garba Ticketing System 2026 • 11th to 20th October 2026"}
         </p>
       </div>
+
 
       {formError && (
         <div className="error-alert" role="alert">
@@ -274,6 +294,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({
               onClick={() => {
                 setSelectedDate(day.isoDate);
                 setFormError(null);
+                onDateChange?.(day.isoDate);
               }}
               className={`festival-day-pill ${
                 selectedDate === day.isoDate
@@ -284,6 +305,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({
               {day.label}
             </button>
           ))}
+
         </div>
       </div>
 
@@ -370,14 +392,14 @@ export const BookingForm: React.FC<BookingFormProps> = ({
             </span>
 
             <span className="price-total-num">
-              Calculated at booking
+              ₹{(quantity * 200).toLocaleString()}
             </span>
           </div>
 
           <p className="price-calc-formula">
-            Ticket price and availability are determined by
-            the current event configuration.
+            ₹200 per pass × {quantity} pass{quantity > 1 ? "es" : ""}. Verified in real-time with database capacity.
           </p>
+
         </div>
       </div>
 
@@ -489,8 +511,9 @@ export const BookingForm: React.FC<BookingFormProps> = ({
             </span>
 
             <span className="final-total-amount">
-              Calculated during booking
+              ₹{(quantity * 200).toLocaleString()}
             </span>
+
           </div>
         </div>
 

@@ -2,8 +2,15 @@ import React, { useState } from "react";
 import { BookingForm } from "../components/BookingForm";
 import { LoadingSkeleton } from "../components/LoadingSkeleton";
 import { TicketConfirmation } from "../components/TicketConfirmation";
+import { ApiError, createBooking } from "../services/api";
 import type { BookingData, ToastMessage } from "../types";
 import "../styles/bookingpage.css";
+
+interface BookingFormData {
+  event_date: string;
+  quantity: number;
+  payment_method: "online" | "cash";
+}
 
 interface BookingPageProps {
   onShowToast: (toast: ToastMessage) => void;
@@ -18,24 +25,44 @@ export const BookingPage: React.FC<BookingPageProps> = ({
   const [bookingSuccessData, setBookingSuccessData] =
     useState<BookingData | null>(null);
 
-  const handleBookingSubmit = async (): Promise<void> => {
+  const handleBookingSubmit = async (formData: BookingFormData): Promise<void> => {
     setIsProcessing(true);
 
     try {
-      /*
-       * Real booking creation will be connected after the booking
-       * request/response contract is finalized.
-       *
-       * The previous demo booking API and simulated payment flow
-       * have intentionally been removed.
-       */
+      const bookingResult = await createBooking({
+        event_date: formData.event_date,
+        quantity: formData.quantity,
+        payment_method: formData.payment_method,
+      });
+
+      setBookingSuccessData(bookingResult);
       onShowToast({
         id: Date.now().toString(),
-        type: "info",
-        title: "BOOKING FLOW UPDATING",
-        message:
-          "The booking flow is being connected to the actual ticketing system.",
+        type: "success",
+        title: "BOOKING CONFIRMED",
+        message: `Successfully reserved ${bookingResult.quantity} pass(es) for ${bookingResult.event_date}.`,
       });
+    } catch (err: unknown) {
+      if (err instanceof ApiError && err.errorCode === "EVENT_DATE_SOLD_OUT") {
+        onShowToast({
+          id: Date.now().toString(),
+          type: "error",
+          title: "SOLD OUT",
+          message:
+            "Today's ticket are sold out. You may book advance for another day. Sorry for inconveniency",
+        });
+      } else {
+        const msg =
+          err instanceof Error
+            ? err.message
+            : "Booking request could not be processed.";
+        onShowToast({
+          id: Date.now().toString(),
+          type: "error",
+          title: "BOOKING FAILED",
+          message: msg,
+        });
+      }
     } finally {
       setIsProcessing(false);
     }

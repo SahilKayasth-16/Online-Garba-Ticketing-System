@@ -511,3 +511,242 @@
   color: #fda4af;
 }
 
+/* Capacity Alerts System */
+.capacity-alerts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.capacity-alert-banner {
+  padding: 0.9rem 1.25rem;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.45;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.capacity-alert-banner.alert-sold-out {
+  background: linear-gradient(135deg, rgba(225, 29, 72, 0.2), rgba(15, 23, 42, 0.9));
+  border: 1px solid rgba(225, 29, 72, 0.5);
+  color: #fecdd3;
+}
+
+.capacity-alert-banner.alert-low-capacity {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(15, 23, 42, 0.9));
+  border: 1px solid rgba(245, 158, 11, 0.5);
+  color: #fef3c7;
+}
+
+.capacity-alert-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.capacity-alert-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.capacity-alert-tag {
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  margin-right: 0.5rem;
+}
+
+.alert-sold-out .capacity-alert-tag {
+  background-color: #e11d48;
+  color: #fff;
+}
+
+.alert-low-capacity .capacity-alert-tag {
+  background-color: #d97706;
+  color: #020617;
+}
+
+/* Accessible Tooltip for Disabled Controls */
+.disabled-tooltip-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.disabled-tooltip-wrapper:hover .disabled-tooltip-box,
+.disabled-tooltip-wrapper:focus-within .disabled-tooltip-box {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(-8px);
+}
+
+.disabled-tooltip-box {
+  opacity: 0;
+  visibility: hidden;
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  background-color: #0f172a;
+  color: #fef3c7;
+  border: 1px solid rgba(245, 158, 11, 0.5);
+  border-radius: 10px;
+  padding: 0.65rem 0.9rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: normal;
+  width: 280px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 100;
+}
+
+.disabled-tooltip-box::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  right: 20px;
+  border-width: 6px;
+  border-style: solid;
+  border-color: #0f172a transparent transparent transparent;
+}
+
+.btn-capacity-edit-disabled {
+  padding: 0.45rem 0.9rem;
+  border-radius: 10px;
+  background-color: rgba(100, 116, 139, 0.15);
+  color: #64748b;
+  border: 1px solid rgba(100, 116, 139, 0.3);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: not-allowed;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+/* Counter Operator Dashboard Specific Styles */
+.counter-date-bar {
+  background: rgba(2, 6, 23, 0.7);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: 16px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+}
+
+.counter-date-label-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.counter-date-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.counter-date-value {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #fef3c7;
+}
+
+.counter-selector-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.counter-date-select {
+  padding: 0.6rem 1rem;
+  background-color: #0f172a;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  border-radius: 10px;
+  color: #fef3c7;
+  font-size: 0.9rem;
+  font-weight: 700;
+  outline: none;
+  cursor: pointer;
+}
+
+.counter-date-select:focus {
+  border-color: #fbbf24;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.25);
+}
+
+.no-event-banner {
+  background-color: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  color: #bae6fd;
+  padding: 0.85rem 1.25rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.badge-status {
+  display: inline-block;
+  padding: 0.2rem 0.55rem;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.badge-status.paid {
+  background-color: rgba(16, 185, 129, 0.18);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.badge-status.pending {
+  background-color: rgba(245, 158, 11, 0.18);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.btn-pdf-download {
+  padding: 0.35rem 0.75rem;
+  border-radius: 8px;
+  background-color: #0f172a;
+  color: #cbd5e1;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: all 0.2s ease;
+}
+
+.btn-pdf-download:hover {
+  background-color: #1e293b;
+  color: #fef3c7;
+  border-color: #fbbf24;
+}
+
+

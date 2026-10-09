@@ -4,6 +4,26 @@ import { useAuth } from "../context/useAuth";
 import { getDailyCapacities, updateDailyCapacity } from "../services/api";
 import type { DailyCapacity } from "../types";
 
+function formatToLongDate(isoDate: string): string {
+  const parts = isoDate.split("-");
+  if (parts.length !== 3) return isoDate;
+  const day = parseInt(parts[2], 10);
+  const monthNames = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
+  const monthIndex = parseInt(parts[1], 10) - 1;
+  const month = monthNames[monthIndex] || "";
+  const year = parts[0];
+  return `${day} ${month} ${year}`;
+}
+
+function getLowCapacityThreshold(capacity: number): number {
+  if (capacity < 100) return 25;
+  if (capacity <= 1000) return 40;
+  return 70;
+}
+
 export const SuperAdminDashboard: React.FC = () => {
   const { token } = useAuth();
 
@@ -55,6 +75,43 @@ export const SuperAdminDashboard: React.FC = () => {
     () => capacities.reduce((sum, item) => sum + item.remaining, 0),
     [capacities]
   );
+
+  // Super Admin Capacity Alerts: Sold-out + Dynamic Low-Capacity Alerts
+  const capacityAlerts = useMemo(() => {
+    const alerts: Array<{
+      id: string;
+      type: "sold_out" | "low_capacity";
+      message: string;
+      dateIso: string;
+      remaining: number;
+    }> = [];
+
+    capacities.forEach((item) => {
+      const longDate = formatToLongDate(item.event_date);
+      if (item.remaining === 0) {
+        alerts.push({
+          id: `sold-out-${item.event_date}`,
+          type: "sold_out",
+          message: `All tickets of ${longDate} are sold out. Kindly check out today's revenue collection & ticket's sale`,
+          dateIso: item.event_date,
+          remaining: 0,
+        });
+      } else {
+        const threshold = getLowCapacityThreshold(item.capacity);
+        if (item.remaining <= threshold) {
+          alerts.push({
+            id: `low-cap-${item.event_date}`,
+            type: "low_capacity",
+            message: `Only ${item.remaining} are left for ${longDate}. You may increase it before it sold out totally`,
+            dateIso: item.event_date,
+            remaining: item.remaining,
+          });
+        }
+      }
+    });
+
+    return alerts;
+  }, [capacities]);
 
   const handleStartEdit = (item: DailyCapacity) => {
     setEditingDate(item.event_date);
@@ -236,6 +293,58 @@ export const SuperAdminDashboard: React.FC = () => {
             </span>
           </div>
         </div>
+
+        {/* Dynamic Capacity Alerts (Super Admin Only: Sold-out + Low Capacity) */}
+        {capacityAlerts.length > 0 && (
+          <div className="capacity-alerts-list">
+            {capacityAlerts.map((alert) => (
+              <div
+                key={alert.id}
+                className={`capacity-alert-banner ${
+                  alert.type === "sold_out"
+                    ? "alert-sold-out"
+                    : "alert-low-capacity"
+                }`}
+                role="alert"
+              >
+                <div className="capacity-alert-content">
+                  <div className="capacity-alert-icon">
+                    {alert.type === "sold_out" ? (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="15" y1="9" x2="9" y2="15" />
+                        <line x1="9" y1="9" x2="15" y2="15" />
+                      </svg>
+                    ) : (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                        <line x1="12" y1="9" x2="12" y2="13" />
+                        <line x1="12" y1="17" x2="12.01" y2="17" />
+                      </svg>
+                    )}
+                  </div>
+                  <div>
+                    <span className="capacity-alert-tag">
+                      {alert.type === "sold_out" ? "SOLD OUT" : "LOW CAPACITY"}
+                    </span>
+                    <span>{alert.message}</span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => {
+                    const target = capacities.find((c) => c.event_date === alert.dateIso);
+                    if (target) handleStartEdit(target);
+                  }}
+                  className="btn-capacity-edit"
+                  style={{ whiteSpace: "nowrap" }}
+                >
+                  Adjust Capacity
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Feedback Banners */}
         {successMessage && (

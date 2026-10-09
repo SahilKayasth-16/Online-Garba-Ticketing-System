@@ -67,7 +67,16 @@ export interface BookingData {
   total_amount: number;
   payment_method: string;
   payment_status: string;
+  created_at?: string;
 }
+
+export interface CreateBookingPayload {
+  event_date: string;
+  quantity: number;
+  payment_method: "cash" | "online";
+  venue?: string;
+}
+
 
 export interface ApiResponse<T> {
   success: boolean;

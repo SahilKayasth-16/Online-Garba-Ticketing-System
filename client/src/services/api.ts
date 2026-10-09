@@ -8,7 +8,9 @@ import type {
   TicketType,
   UserPublic,
   DailyCapacity,
+  CreateBookingPayload,
 } from "../types";
+
 
 
 const API_BASE_URL =
@@ -292,6 +294,76 @@ export async function updateDailyCapacity(
 
   if (!result.success && !result.data) {
     throw new Error(result.message || "Failed to update daily capacity.");
+  }
+
+  return result.data;
+}
+
+export class ApiError extends Error {
+  errorCode?: string;
+  statusCode: number;
+
+  constructor(message: string, statusCode: number, errorCode?: string) {
+    super(message);
+    this.name = "ApiError";
+    this.statusCode = statusCode;
+    this.errorCode = errorCode;
+  }
+}
+
+export async function createBooking(
+  payload: CreateBookingPayload,
+): Promise<BookingData> {
+  const response = await fetch(`${API_BASE_URL}/bookings`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const resData = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    const errorMsg =
+      resData.detail ||
+      resData.message ||
+      `Booking request failed (Status ${response.status})`;
+    const errCode = resData.error_code;
+    throw new ApiError(errorMsg, response.status, errCode);
+  }
+
+  const result: ApiResponse<BookingData> = resData;
+
+  if (!result.success && !result.data) {
+    throw new ApiError(
+      result.message || "Failed to create booking.",
+      response.status,
+    );
+  }
+
+  return result.data;
+}
+
+export async function getBookings(eventDate?: string): Promise<BookingData[]> {
+  const url = eventDate
+    ? `${API_BASE_URL}/bookings?event_date=${encodeURIComponent(eventDate)}`
+    : `${API_BASE_URL}/bookings`;
+
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(
+      errorData.detail ||
+        `Failed to retrieve bookings (Status ${response.status})`,
+    );
+  }
+
+  const result: ApiResponse<BookingData[]> = await response.json();
+
+  if (!result.success) {
+    throw new Error(result.message || "Failed to retrieve bookings.");
   }
 
   return result.data;
