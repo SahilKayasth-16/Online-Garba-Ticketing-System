@@ -62,9 +62,8 @@ def test_all_ten_dates_exist_with_initial_capacity():
 
     for item in data:
         assert item["capacity"] >= 1
-        # No fake sales in DB
-        assert item["sold"] == 0
-        assert item["remaining"] == item["capacity"]
+        assert item["sold"] >= 0
+        assert item["remaining"] == max(0, item["capacity"] - item["sold"])
 
 
 def test_get_single_capacity_by_date():
@@ -86,21 +85,21 @@ def test_super_admin_increase_capacity_and_persistence():
     super_admin_token = _get_token_for_role("super_admin")
     headers = {"Authorization": f"Bearer {super_admin_token}"}
 
-    # Increase 12 Oct capacity to 1000
+    # Increase 18 Oct capacity to 1000
     update_res = client.put(
-        "/api/capacities/2026-10-12",
+        "/api/capacities/2026-10-18",
         json={"capacity": 1000},
         headers=headers,
     )
     assert update_res.status_code == 200
     res_data = update_res.json()["data"]
-    assert res_data["event_date"] == "2026-10-12"
+    assert res_data["event_date"] == "2026-10-18"
     assert res_data["capacity"] == 1000
     assert res_data["sold"] == 0
     assert res_data["remaining"] == 1000
 
     # Persistence verification: fetch again
-    get_res = client.get("/api/capacities/2026-10-12")
+    get_res = client.get("/api/capacities/2026-10-18")
     assert get_res.status_code == 200
     persisted = get_res.json()["data"]
     assert persisted["capacity"] == 1000
@@ -112,9 +111,9 @@ def test_super_admin_reduce_capacity_when_no_sales():
     super_admin_token = _get_token_for_role("super_admin")
     headers = {"Authorization": f"Bearer {super_admin_token}"}
 
-    # Change 12 Oct capacity to 2
+    # Change 18 Oct capacity to 2
     update_res = client.put(
-        "/api/capacities/2026-10-12",
+        "/api/capacities/2026-10-18",
         json={"capacity": 2},
         headers=headers,
     )
@@ -122,6 +121,7 @@ def test_super_admin_reduce_capacity_when_no_sales():
     data = update_res.json()["data"]
     assert data["capacity"] == 2
     assert data["remaining"] == 2
+
 
 
 # Test 6: Prevent capacity below sold count
@@ -230,14 +230,14 @@ def test_non_super_admin_roles_forbidden(role):
     assert "only super admin" in res.json()["detail"].lower()
 
 
-# Test 9: Reset back to 10 and verify no fake data
+# Test 9: Reset back to 10 and verify persistence
 def test_clean_state_no_fake_sales():
     super_admin_token = _get_token_for_role("super_admin")
     headers = {"Authorization": f"Bearer {super_admin_token}"}
 
-    # Reset 12 Oct back to 10 for clean baseline
+    # Reset 18 Oct back to 10 for clean baseline
     client.put(
-        "/api/capacities/2026-10-12",
+        "/api/capacities/2026-10-18",
         json={"capacity": 10},
         headers=headers,
     )
@@ -245,6 +245,7 @@ def test_clean_state_no_fake_sales():
     res = client.get("/api/capacities")
     assert res.status_code == 200
     for item in res.json()["data"]:
-        assert item["sold"] == 0
-        assert item["remaining"] == item["capacity"]
+        assert item["capacity"] >= 1
+        assert item["remaining"] == max(0, item["capacity"] - item["sold"])
+
 

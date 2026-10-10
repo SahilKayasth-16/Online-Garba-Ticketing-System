@@ -75,5 +75,21 @@ def require_super_admin(
     return current_user
 
 
-__all__ = ["get_db", "get_current_user", "require_super_admin"]
+def require_security_staff(
+    current_user: User = Depends(get_current_user),
+) -> User:
+    """
+    Enforces that the current authenticated user has the 'security_staff' role.
+    Raises 403 Forbidden if called by any user with a different role.
+    """
+    if current_user.role != "security_staff":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Forbidden: Only Security Staff is authorized to perform ticket verification and access security checkpoint.",
+        )
+    return current_user
+
+
+__all__ = ["get_db", "get_current_user", "require_super_admin", "require_security_staff"]
+
 

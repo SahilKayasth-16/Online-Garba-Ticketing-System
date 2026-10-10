@@ -107,3 +107,52 @@ export interface UpdateCapacityPayload {
   capacity: number;
 }
 
+export interface VerifyTicketRequest {
+  ticket_token: string;
+  gate_event_date?: string;
+}
+
+export interface TicketVerificationData {
+  serial_number: string;
+  event_date: string;
+  payment_status: string;
+  entry_status: string;
+  entry_timestamp?: string | null;
+  venue?: string;
+}
+
+export interface VerifyTicketResponse {
+  success: boolean;
+  status: "valid" | "already_used" | "invalid" | "unpaid" | "wrong_date" | "revoked";
+  message: string;
+  error_code?: string;
+  ticket?: TicketVerificationData | null;
+}
+
+export interface ScanLogItem {
+  id: number;
+  ticket_number?: string | null;
+  event_date?: string | null;
+  scan_result: string;
+  message: string;
+  scanned_at: string;
+  scanned_by?: string | null;
+  is_successful_entry: boolean;
+}
+
+export interface ScanHistoryResponse {
+  success: boolean;
+  total: number;
+  items: ScanLogItem[];
+}
+
+export interface SecurityStatsResponse {
+  success: boolean;
+  total_scans: number;
+  successful_entries: number;
+  rejected_scans: number;
+  already_used_scans: number;
+  active_event_date: string;
+}
+
+

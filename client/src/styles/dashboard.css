@@ -749,4 +749,593 @@
   border-color: #fbbf24;
 }
 
+/* =========================================================================
+   SECURITY DASHBOARD & QR SCANNER STYLES
+   ========================================================================= */
+
+.security-main-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+@media (max-width: 992px) {
+  .security-main-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.security-date-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: 16px;
+  margin-bottom: 1.5rem;
+}
+
+.security-date-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #fef3c7;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.security-date-select {
+  padding: 0.45rem 1rem;
+  background-color: #020617;
+  color: #fef3c7;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  outline: none;
+  cursor: pointer;
+}
+
+.scanner-panel {
+  background: linear-gradient(145deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85));
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: 20px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+.scanner-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.scanner-title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #fef3c7;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.scanner-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.scanner-status-badge.stopped {
+  background-color: rgba(100, 116, 139, 0.2);
+  color: #94a3b8;
+  border: 1px solid rgba(100, 116, 139, 0.4);
+}
+
+.scanner-status-badge.ready {
+  background-color: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.scanner-status-badge.scanning {
+  background-color: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.4);
+  animation: pulse-border 1.5s infinite;
+}
+
+.scanner-status-badge.verifying {
+  background-color: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  animation: pulse-border 1s infinite;
+}
+
+.scanner-status-badge.error {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+@keyframes pulse-border {
+  0% { opacity: 0.7; }
+  50% { opacity: 1; }
+  100% { opacity: 0.7; }
+}
+
+.scanner-viewport-wrapper {
+  position: relative;
+  width: 100%;
+  min-height: 280px;
+  max-height: 380px;
+  background-color: #020617;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 2px dashed rgba(245, 158, 11, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#qr-scanner-video-region {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+#qr-scanner-video-region video {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  border-radius: 14px;
+}
+
+.scanner-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 2rem;
+  color: #64748b;
+  gap: 0.75rem;
+}
+
+.scanner-placeholder svg {
+  color: #475569;
+}
+
+.scanner-placeholder-text {
+  font-size: 0.9rem;
+  max-width: 280px;
+  line-height: 1.4;
+}
+
+.scanner-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.scanner-button-row {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.btn-scanner {
+  flex: 1;
+  min-width: 140px;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.btn-scanner-start {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+}
+
+.btn-scanner-start:hover:not(:disabled) {
+  background: linear-gradient(135deg, #059669, #047857);
+  transform: translateY(-1px);
+}
+
+.btn-scanner-stop {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
+}
+
+.btn-scanner-stop:hover:not(:disabled) {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  transform: translateY(-1px);
+}
+
+.btn-scanner-alt {
+  background: #1e293b;
+  color: #cbd5e1;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.btn-scanner-alt:hover:not(:disabled) {
+  background: #334155;
+  color: #fef3c7;
+  border-color: #fbbf24;
+}
+
+.btn-scanner:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.scanner-camera-picker {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #0f172a;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  border-radius: 10px;
+  padding: 0.4rem 0.75rem;
+}
+
+.scanner-camera-picker select {
+  background: transparent;
+  border: none;
+  color: #cbd5e1;
+  font-size: 0.8rem;
+  font-weight: 600;
+  width: 100%;
+  outline: none;
+  cursor: pointer;
+}
+
+.scanner-camera-picker select option {
+  background-color: #0f172a;
+  color: #fef3c7;
+}
+
+.scanner-manual-input-box {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.scanner-manual-input {
+  flex: 1;
+  padding: 0.6rem 0.9rem;
+  background-color: #020617;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 10px;
+  color: #fef3c7;
+  font-size: 0.85rem;
+  outline: none;
+}
+
+.scanner-manual-input:focus {
+  border-color: #f59e0b;
+}
+
+.scanner-error-box {
+  padding: 0.75rem 1rem;
+  background-color: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: 12px;
+  color: #fca5a5;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+/* Result Card Styles */
+.result-panel {
+  background: linear-gradient(145deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85));
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: 20px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+.result-card {
+  border-radius: 16px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  transition: all 0.3s ease;
+}
+
+.result-card.valid {
+  background: linear-gradient(145deg, rgba(6, 78, 59, 0.4), rgba(6, 95, 70, 0.2));
+  border: 2px solid #10b981;
+  box-shadow: 0 0 25px rgba(16, 185, 129, 0.25);
+}
+
+.result-card.already_used {
+  background: linear-gradient(145deg, rgba(146, 64, 14, 0.35), rgba(180, 83, 9, 0.15));
+  border: 2px solid #f59e0b;
+  box-shadow: 0 0 25px rgba(245, 158, 11, 0.2);
+}
+
+.result-card.unpaid,
+.result-card.wrong_date,
+.result-card.revoked,
+.result-card.invalid {
+  background: linear-gradient(145deg, rgba(136, 19, 55, 0.35), rgba(159, 18, 57, 0.15));
+  border: 2px solid #f43f5e;
+  box-shadow: 0 0 25px rgba(244, 63, 94, 0.2);
+}
+
+.result-card.idle {
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px dashed rgba(100, 116, 139, 0.3);
+  text-align: center;
+  align-items: center;
+  justify-content: center;
+  min-height: 240px;
+  color: #64748b;
+}
+
+.result-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.result-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.result-card.valid .result-icon {
+  background: #10b981;
+  color: #022c22;
+}
+
+.result-card.already_used .result-icon {
+  background: #f59e0b;
+  color: #451a03;
+}
+
+.result-card.unpaid .result-icon,
+.result-card.wrong_date .result-icon,
+.result-card.revoked .result-icon,
+.result-card.invalid .result-icon {
+  background: #f43f5e;
+  color: #4c0519;
+}
+
+.result-headings {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.result-verdict {
+  font-size: 1.3rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.result-card.valid .result-verdict {
+  color: #34d399;
+}
+
+.result-card.already_used .result-verdict {
+  color: #fbbf24;
+}
+
+.result-card.unpaid .result-verdict,
+.result-card.wrong_date .result-verdict,
+.result-card.revoked .result-verdict,
+.result-card.invalid .result-verdict {
+  color: #fb7185;
+}
+
+.result-submessage {
+  font-size: 0.85rem;
+  color: #cbd5e1;
+  line-height: 1.4;
+}
+
+.result-details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+  padding: 1rem;
+  background: rgba(2, 6, 23, 0.6);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.detail-slot {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.detail-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #94a3b8;
+  letter-spacing: 0.05em;
+}
+
+.detail-val {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #f8fafc;
+}
+
+.detail-badge-paid {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 6px;
+  background-color: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+  font-size: 0.75rem;
+  font-weight: 700;
+  width: fit-content;
+}
+
+.detail-badge-pending {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 6px;
+  background-color: rgba(244, 63, 94, 0.2);
+  color: #fb7185;
+  font-size: 0.75rem;
+  font-weight: 700;
+  width: fit-content;
+}
+
+/* History Card */
+.history-panel {
+  background: linear-gradient(145deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85));
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: 20px;
+  padding: 1.5rem;
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.history-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #fef3c7;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-refresh {
+  padding: 0.45rem 0.9rem;
+  border-radius: 10px;
+  background-color: #0f172a;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: #fef3c7;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: all 0.2s ease;
+}
+
+.btn-refresh:hover {
+  background-color: #1e293b;
+  border-color: #fbbf24;
+}
+
+.scan-history-table-container {
+  overflow-x: auto;
+}
+
+.scan-history-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.85rem;
+}
+
+.scan-history-table th {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #94a3b8;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid rgba(245, 158, 11, 0.2);
+  background-color: rgba(2, 6, 23, 0.5);
+}
+
+.scan-history-table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: #cbd5e1;
+}
+
+.scan-history-table tr:hover td {
+  background-color: rgba(245, 158, 11, 0.04);
+}
+
+.badge-scan-result {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.badge-scan-result.valid {
+  background-color: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.badge-scan-result.already_used {
+  background-color: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.badge-scan-result.unpaid,
+.badge-scan-result.wrong_date,
+.badge-scan-result.revoked,
+.badge-scan-result.invalid {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+
 

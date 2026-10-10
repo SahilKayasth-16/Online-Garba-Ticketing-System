@@ -103,6 +103,11 @@ def test_create_booking_success_and_advance_date_capacity():
         init_res = client.get("/api/capacities/2026-10-13")
         assert init_res.status_code == 200
         initial_remaining = init_res.json()["data"]["remaining"]
+        initial_sold = init_res.json()["data"]["sold"]
+
+        # Record initial sold for 14 Oct
+        other_init_res = client.get("/api/capacities/2026-10-14")
+        other_initial_sold = other_init_res.json()["data"]["sold"]
 
         # Book 2 tickets for 13 Oct
         payload = {
@@ -125,11 +130,11 @@ def test_create_booking_success_and_advance_date_capacity():
         # Verify capacity for 13 Oct consumed 2 tickets
         after_res = client.get("/api/capacities/2026-10-13")
         assert after_res.json()["data"]["remaining"] == initial_remaining - 2
-        assert after_res.json()["data"]["sold"] == 2
+        assert after_res.json()["data"]["sold"] == initial_sold + 2
 
-        # Verify 12 Oct capacity was NOT affected by advance booking for 13 Oct
-        other_res = client.get("/api/capacities/2026-10-12")
-        assert other_res.json()["data"]["sold"] == 0
+        # Verify 14 Oct capacity was NOT affected by advance booking for 13 Oct
+        other_res = client.get("/api/capacities/2026-10-14")
+        assert other_res.json()["data"]["sold"] == other_initial_sold
 
     finally:
         if created_booking_id:

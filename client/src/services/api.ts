@@ -9,7 +9,12 @@ import type {
   UserPublic,
   DailyCapacity,
   CreateBookingPayload,
+  VerifyTicketRequest,
+  VerifyTicketResponse,
+  ScanHistoryResponse,
+  SecurityStatsResponse,
 } from "../types";
+
 
 
 
@@ -367,4 +372,81 @@ export async function getBookings(eventDate?: string): Promise<BookingData[]> {
   }
 
   return result.data;
+}
+
+export async function verifyTicket(
+  token: string,
+  payload: VerifyTicketRequest,
+): Promise<VerifyTicketResponse> {
+  const response = await fetch(`${API_BASE_URL}/security/verify-ticket`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const resData = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    const errorMsg =
+      resData.detail ||
+      resData.message ||
+      `Verification request failed (Status ${response.status})`;
+    throw new ApiError(errorMsg, response.status, resData.error_code);
+  }
+
+  return resData;
+}
+
+export async function getScanHistory(
+  token: string,
+  eventDate?: string,
+  limit: number = 50,
+): Promise<ScanHistoryResponse> {
+  const url = eventDate
+    ? `${API_BASE_URL}/security/scan-history?event_date=${encodeURIComponent(eventDate)}&limit=${limit}`
+    : `${API_BASE_URL}/security/scan-history?limit=${limit}`;
+
+  const response = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(
+      errorData.detail ||
+        `Failed to retrieve scan history (Status ${response.status})`,
+    );
+  }
+
+  return response.json();
+}
+
+export async function getSecurityStats(
+  token: string,
+  eventDate?: string,
+): Promise<SecurityStatsResponse> {
+  const url = eventDate
+    ? `${API_BASE_URL}/security/stats?event_date=${encodeURIComponent(eventDate)}`
+    : `${API_BASE_URL}/security/stats`;
+
+  const response = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(
+      errorData.detail ||
+        `Failed to retrieve security stats (Status ${response.status})`,
+    );
+  }
+
+  return response.json();
 }

@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.models.booking import Booking
 from app.models.capacity import DailyCapacity
+from app.models.ticket import Ticket
 from app.schemas.booking import CreateBookingRequest
 from app.services import capacity_service
 
@@ -194,6 +195,22 @@ def create_booking(db: Session, payload: CreateBookingRequest) -> Dict[str, Any]
 
     try:
         db.add(new_booking)
+        db.flush()
+
+        # Create individual tickets with unique tokens and serial numbers
+        for i in range(1, payload.quantity + 1):
+            t_num = f"{booking_id}-{i:02d}"
+            t_token = f"OGTS-TKT-{uuid.uuid4().hex.upper()}"
+            ticket = Ticket(
+                ticket_number=t_num,
+                ticket_token=t_token,
+                booking_id=new_booking.id,
+                event_date=parsed_date.isoformat(),
+                status="valid",
+                entry_status="unused",
+            )
+            db.add(ticket)
+
         db.commit()
         db.refresh(new_booking)
     except Exception:

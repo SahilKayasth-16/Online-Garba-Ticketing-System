@@ -1,9 +1,13 @@
 from datetime import datetime
 from decimal import Decimal
+from typing import TYPE_CHECKING, List
 from sqlalchemy import DateTime, Integer, Numeric, String, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+
+if TYPE_CHECKING:
+    from app.models.ticket import Ticket
 
 
 class Booking(Base):
@@ -32,4 +36,8 @@ class Booking(Base):
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    tickets: Mapped[List["Ticket"]] = relationship(
+        "Ticket", back_populates="booking", cascade="all, delete-orphan"
     )
