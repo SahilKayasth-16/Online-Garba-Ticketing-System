@@ -3,10 +3,12 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
-from app.core.dependencies import get_db
+from app.core.dependencies import get_db, require_counter_staff
+from app.models.user import User
 from app.schemas.booking import (
     BookingListResponse,
     BookingResponse,
+    ConfirmCashPaymentResponse,
     CreateBookingRequest,
 )
 from app.services import booking_service
@@ -143,6 +145,58 @@ def get_booking(booking_id: str, db: Session = Depends(get_db)):
         "message": "Booking retrieved successfully.",
         "data": booking,
     }
+
+
+@router.post(
+    "/{booking_id}/confirm-cash",
+    response_model=ConfirmCashPaymentResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Confirm cash collection by counter staff and issue entrance passes",
+)
+def confirm_cash_payment(
+    booking_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_counter_staff),
+):
+    """
+    Counter operator, super admin, or event admin confirms physical cash payment.
+    - Transitions payment_status to 'paid'.
+    - Stamps confirming operator user ID and timestamp.
+    - Idempotently creates N individual Ticket records with entry QR codes.
+    - Returns updated booking data with ticket passes.
+    """
+    try:
+        updated_booking = booking_service.confirm_cash_payment(
+            db=db,
+            booking_id=booking_id,
+            operator_user=current_user,
+        )
+        return {
+            "success": True,
+            "status": "paid",
+            "message": "payment received",
+            "data": updated_booking,
+        }
+    except InsufficientCapacityError as e:
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={
+                "success": False,
+                "error_code": e.error_code,
+                "message": e.message,
+                "detail": e.message,
+            },
+        )
+    except BookingError as e:
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={
+                "success": False,
+                "error_code": e.error_code,
+                "message": e.message,
+                "detail": e.message,
+            },
+        )
 
 
 @router.get("/{booking_id}/ticket.pdf")

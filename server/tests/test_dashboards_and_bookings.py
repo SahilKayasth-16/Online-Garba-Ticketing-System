@@ -92,7 +92,11 @@ def test_advance_booking_flow_and_sold_out():
             "payment_method": "cash",
         })
         assert bk1.status_code == 201
-        created_ids.append(bk1.json()["data"]["booking_id"])
+        bk1_id = bk1.json()["data"]["booking_id"]
+        created_ids.append(bk1_id)
+        # Confirm cash
+        conf1 = client.post(f"/api/bookings/{bk1_id}/confirm-cash", headers=sa_headers)
+        assert conf1.status_code == 200
 
         # Check remaining is 2
         cap_res = client.get("/api/capacities/2026-10-14")
@@ -106,7 +110,11 @@ def test_advance_booking_flow_and_sold_out():
             "payment_method": "cash",
         })
         assert bk2.status_code == 201
-        created_ids.append(bk2.json()["data"]["booking_id"])
+        bk2_id = bk2.json()["data"]["booking_id"]
+        created_ids.append(bk2_id)
+        # Confirm cash
+        conf2 = client.post(f"/api/bookings/{bk2_id}/confirm-cash", headers=sa_headers)
+        assert conf2.status_code == 200
 
         # Check remaining is 0 (SOLD OUT)
         cap_res_sold = client.get("/api/capacities/2026-10-14")
@@ -189,12 +197,16 @@ def test_concurrent_bookings_prevent_overselling():
 
         for r in results:
             if r.status_code == 201:
-                created_ids.append(r.json()["data"]["booking_id"])
+                bid = r.json()["data"]["booking_id"]
+                created_ids.append(bid)
+                # Confirm cash so it is marked paid
+                client.post(f"/api/bookings/{bid}/confirm-cash", headers=sa_headers)
 
         # Check final remaining is exactly 0 and sold is exactly 2
         cap_res = client.get("/api/capacities/2026-10-19")
         assert cap_res.json()["data"]["sold"] == 2
         assert cap_res.json()["data"]["remaining"] == 0
+
 
     finally:
         db: Session = SessionLocal()

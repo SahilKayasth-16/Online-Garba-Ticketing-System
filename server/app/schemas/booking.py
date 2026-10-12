@@ -29,6 +29,18 @@ class CreateBookingRequest(BaseModel):
         return v
 
 
+class TicketItem(BaseModel):
+    """
+    Schema for an individual entrance pass within a booking.
+    """
+    ticket_number: str
+    ticket_token: str
+    event_date: str
+    status: str
+    entry_status: str
+    qr_code_data_url: Optional[str] = None
+
+
 class BookingData(BaseModel):
     booking_id: str
     venue: str
@@ -38,6 +50,13 @@ class BookingData(BaseModel):
     total_amount: float
     payment_method: str
     payment_status: str
+    cash_collected_at: Optional[datetime] = None
+    razorpay_order_id: Optional[str] = None
+    razorpay_payment_id: Optional[str] = None
+    razorpay_qr_id: Optional[str] = None
+    payment_qr_payload: Optional[str] = None
+    payment_qr_data_url: Optional[str] = None
+    tickets: List[TicketItem] = []
     created_at: Optional[datetime] = None
 
 
@@ -51,3 +70,52 @@ class BookingListResponse(BaseModel):
     success: bool = True
     message: str = "Bookings retrieved successfully."
     data: List[BookingData]
+
+
+class ConfirmCashPaymentResponse(BaseModel):
+    success: bool
+    status: str
+    message: str
+    data: BookingData
+
+
+class CreateRazorpayOrderRequest(BaseModel):
+    booking_id: str
+
+
+class RazorpayOrderResponse(BaseModel):
+    success: bool
+    configured: bool
+    booking_id: str
+    amount_in_paise: int
+    amount_in_rupees: float
+    currency: str = "INR"
+    razorpay_order_id: Optional[str] = None
+    razorpay_key_id: Optional[str] = None
+    message: str
+
+
+class VerifyPaymentRequest(BaseModel):
+    booking_id: str
+    razorpay_order_id: str
+    razorpay_payment_id: str
+    razorpay_signature: str
+
+
+class PaymentVerificationResponse(BaseModel):
+    success: bool
+    status: str
+    message: str
+    data: Optional[BookingData] = None
+
+
+class CreatePaymentQrResponse(BaseModel):
+    success: bool
+    configured: bool
+    booking_id: str
+    amount_in_paise: int
+    amount_in_rupees: float
+    razorpay_qr_id: Optional[str] = None
+    qr_image_url: Optional[str] = None
+    qr_data_url: Optional[str] = None
+    message: str

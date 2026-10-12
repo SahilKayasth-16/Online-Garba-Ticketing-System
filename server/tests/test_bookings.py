@@ -97,6 +97,8 @@ def test_download_ticket_pdf_success():
 
 
 def test_create_booking_success_and_advance_date_capacity():
+    token = _get_super_admin_token()
+    headers = {"Authorization": f"Bearer {token}"}
     created_booking_id = None
     try:
         # Check initial remaining tickets for 13 Oct 2026
@@ -124,8 +126,18 @@ def test_create_booking_success_and_advance_date_capacity():
         assert booking["quantity"] == 2
         assert booking["event_date"] == "2026-10-13"
         assert booking["payment_method"] == "CASH"
-        assert booking["payment_status"] == "paid"
+        assert booking["payment_status"] == "pending"
         assert booking["total_amount"] == 400.0
+
+        # Operator / admin confirms cash collection
+        confirm_res = client.post(
+            f"/api/bookings/{created_booking_id}/confirm-cash",
+            headers=headers,
+        )
+        assert confirm_res.status_code == 200
+        confirmed_booking = confirm_res.json()["data"]
+        assert confirmed_booking["payment_status"] == "paid"
+        assert len(confirmed_booking["tickets"]) == 2
 
         # Verify capacity for 13 Oct consumed 2 tickets
         after_res = client.get("/api/capacities/2026-10-13")
@@ -153,14 +165,19 @@ def test_create_booking_sold_out_rejection():
 
     created_ids = []
     try:
-        # Book 2 tickets (consuming all capacity)
+        # Book 2 tickets (consuming all capacity once paid)
         res1 = client.post("/api/bookings", json={
             "event_date": "2026-10-16",
             "quantity": 2,
             "payment_method": "cash",
         })
         assert res1.status_code == 201
-        created_ids.append(res1.json()["data"]["booking_id"])
+        b_id = res1.json()["data"]["booking_id"]
+        created_ids.append(b_id)
+
+        # Confirm cash payment so capacity is consumed
+        conf1 = client.post(f"/api/bookings/{b_id}/confirm-cash", headers=headers)
+        assert conf1.status_code == 200
 
         # Check remaining is 0
         cap_res = client.get("/api/capacities/2026-10-16")
@@ -191,7 +208,13 @@ def test_create_booking_insufficient_capacity():
     token = _get_super_admin_token()
     headers = {"Authorization": f"Bearer {token}"}
 
-    # Capacity is 10 for 17 Oct, attempt booking 10 is allowed, but requesting 10 when remaining is 2 is rejected
+    # Ensure clean slate for 17 Oct
+    clean_db = SessionLocal()
+    clean_db.execute(delete(Booking).where(Booking.event_date.like("%17%")))
+    clean_db.commit()
+    clean_db.close()
+
+    # Capacity is 10 for 17 Oct, set to 5
     client.put("/api/capacities/2026-10-17", json={"capacity": 5}, headers=headers)
     created_ids = []
     try:
@@ -201,7 +224,12 @@ def test_create_booking_insufficient_capacity():
             "payment_method": "cash",
         })
         assert res1.status_code == 201
-        created_ids.append(res1.json()["data"]["booking_id"])
+        b_id = res1.json()["data"]["booking_id"]
+        created_ids.append(b_id)
+
+        # Confirm cash to consume 4 of 5
+        conf1 = client.post(f"/api/bookings/{b_id}/confirm-cash", headers=headers)
+        assert conf1.status_code == 200
 
         # 1 remaining, try to book 2
         res2 = client.post("/api/bookings", json={
@@ -218,6 +246,7 @@ def test_create_booking_insufficient_capacity():
             db.execute(delete(Booking).where(Booking.booking_id == bid))
         db.commit()
         client.put("/api/capacities/2026-10-17", json={"capacity": 10}, headers=headers)
+
         db.close()
 
 

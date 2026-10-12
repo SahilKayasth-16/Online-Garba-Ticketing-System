@@ -18,6 +18,11 @@ class Settings(BaseSettings):
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     FRONTEND_URL: str = "http://localhost:5173"
 
+    # Razorpay Test Mode Configuration
+    RAZORPAY_KEY_ID: str = ""
+    RAZORPAY_KEY_SECRET: str = ""
+    RAZORPAY_TEST_MODE: bool = True
+
     @field_validator("DEBUG", mode="before")
     @classmethod
     def parse_debug(cls, v: Any) -> bool:

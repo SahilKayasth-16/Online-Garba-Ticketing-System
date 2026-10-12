@@ -100,7 +100,6 @@ def verify_and_redeem_ticket(
     # 2. Acquire row-level lock on Ticket record
     stmt = (
         select(Ticket)
-        .options(joinedload(Ticket.booking))
         .where(
             or_(
                 Ticket.ticket_token == clean_token,

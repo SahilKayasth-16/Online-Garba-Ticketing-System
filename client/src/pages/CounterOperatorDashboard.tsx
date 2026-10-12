@@ -2,9 +2,13 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { BookingForm } from "../components/BookingForm";
 import { DashboardLayout } from "../components/DashboardLayout";
 import { Toast } from "../components/Toast";
+import { useAuth } from "../context/useAuth";
 import {
   ApiError,
+  confirmCashPayment,
   createBooking,
+  createPaymentQr,
+  getBookingById,
   getBookings,
   getDailyCapacities,
   getTicketPdfUrl,
@@ -49,6 +53,8 @@ function formatToLongDate(isoDate: string): string {
 }
 
 export const CounterOperatorDashboard: React.FC = () => {
+  const { token } = useAuth();
+
   // Current calendar date in Asia/Kolkata
   const [todayIso, setTodayIso] = useState<string>(getKolkataIsoDate);
   const lastTodayIsoRef = useRef<string>(todayIso);
@@ -68,7 +74,11 @@ export const CounterOperatorDashboard: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [isProcessingBooking, setIsProcessingBooking] = useState<boolean>(false);
+  const [activeBooking, setActiveBooking] = useState<BookingData | null>(null);
+  const [confirmingCashIds, setConfirmingCashIds] = useState<Set<string>>(new Set());
   const [toast, setToast] = useState<ToastMessage | null>(null);
+
+  const activeBookingRef = useRef<HTMLDivElement | null>(null);
 
   const showToast = (t: ToastMessage) => {
     setToast(t);
@@ -137,6 +147,78 @@ export const CounterOperatorDashboard: React.FC = () => {
     return capacities.find((c) => c.event_date === selectedDate);
   }, [capacities, selectedDate]);
 
+  // Confirm cash collection handler
+  const handleConfirmCash = async (bookingId: string) => {
+    if (!token) {
+      showToast({
+        id: Date.now().toString(),
+        type: "error",
+        title: "AUTHENTICATION REQUIRED",
+        message: "You must be logged in as Counter Operator or Admin to collect cash.",
+      });
+      return;
+    }
+
+    setConfirmingCashIds((prev) => new Set(prev).add(bookingId));
+
+    try {
+      const res = await confirmCashPayment(token, bookingId);
+
+      showToast({
+        id: Date.now().toString(),
+        type: "success",
+        title: "PAYMENT CONFIRMED",
+        message: "payment received",
+      });
+
+      // If activeBooking is the one being confirmed, update it with issued tickets
+      if (activeBooking && activeBooking.booking_id === bookingId) {
+        setActiveBooking(res.data);
+      }
+
+      // Refresh table and capacity stats
+      await loadData(selectedDate, true);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "payment failed";
+      showToast({
+        id: Date.now().toString(),
+        type: "error",
+        title: "PAYMENT FAILED",
+        message: msg.toLowerCase().includes("fail") ? msg : "payment failed",
+      });
+    } finally {
+      setConfirmingCashIds((prev) => {
+        const next = new Set(prev);
+        next.delete(bookingId);
+        return next;
+      });
+    }
+  };
+
+  // Inspect existing booking in desk preview
+  const handleInspectBooking = async (bookingId: string) => {
+    try {
+      let b = await getBookingById(bookingId);
+      // If online pending and lacks QR URL, fetch payment QR
+      if (b.payment_method.toUpperCase() === "ONLINE" && b.payment_status.toLowerCase() === "pending" && !b.payment_qr_data_url) {
+        const qrRes = await createPaymentQr(bookingId);
+        b = { ...b, payment_qr_data_url: qrRes.qr_data_url };
+      }
+      setActiveBooking(b);
+      setTimeout(() => {
+        activeBookingRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to load booking details.";
+      showToast({
+        id: Date.now().toString(),
+        type: "error",
+        title: "INSPECTION ERROR",
+        message: msg,
+      });
+    }
+  };
+
   const handleBookingSubmit = async (formData: {
     event_date: string;
     quantity: number;
@@ -145,21 +227,46 @@ export const CounterOperatorDashboard: React.FC = () => {
     setIsProcessingBooking(true);
 
     try {
-      const result = await createBooking({
+      let result = await createBooking({
         event_date: formData.event_date,
         quantity: formData.quantity,
         payment_method: formData.payment_method,
       });
 
-      showToast({
-        id: Date.now().toString(),
-        type: "success",
-        title: "TICKET ISSUED SUCCESSFULLY",
-        message: `Booking #${result.booking_id}: ${result.quantity} pass(es) confirmed for ${result.event_date}. Total: ₹${result.total_amount}.`,
-      });
+      // If online payment requested, fetch Customer Payment QR (System 1)
+      if (formData.payment_method === "online") {
+        try {
+          const qrRes = await createPaymentQr(result.booking_id);
+          result = { ...result, payment_qr_data_url: qrRes.qr_data_url };
+        } catch {
+          // fallback to result as-is
+        }
+      }
+
+      setActiveBooking(result);
+
+      if (formData.payment_method === "cash") {
+        showToast({
+          id: Date.now().toString(),
+          type: "info",
+          title: "CASH PAYMENT REQUIRED",
+          message: `Booking #${result.booking_id} reserved. Please collect cash from customer.`,
+        });
+      } else {
+        showToast({
+          id: Date.now().toString(),
+          type: "info",
+          title: "PAYMENT QR GENERATED",
+          message: `Booking #${result.booking_id} created. Customer payment QR ready.`,
+        });
+      }
 
       // Refresh data from database
       await loadData(selectedDate, true);
+
+      setTimeout(() => {
+        activeBookingRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
     } catch (err: unknown) {
       if (err instanceof ApiError && err.errorCode === "EVENT_DATE_SOLD_OUT") {
         showToast({
@@ -203,7 +310,7 @@ export const CounterOperatorDashboard: React.FC = () => {
           Counter Operator Dashboard
         </h2>
         <p className="dashboard-role-description">
-          Process on-spot ticket bookings, issue passes for cash and online payments, and inspect live ticket capacity.
+          Process on-spot ticket bookings, collect cash, generate customer payment QRs, and issue official admission passes.
         </p>
 
         {/* Notice when current calendar date has no scheduled event */}
@@ -326,6 +433,190 @@ export const CounterOperatorDashboard: React.FC = () => {
         </div>
       </div>
 
+      {/* Active Desk Booking Terminal / Issuance Panel */}
+      {activeBooking && (
+        <div className="dashboard-card" ref={activeBookingRef} style={{ marginTop: "2rem", border: "1.5px solid rgba(245, 158, 11, 0.5)" }}>
+          <div className="capacity-header-row" style={{ alignItems: "center" }}>
+            <div>
+              <h2 className="dashboard-card-title" style={{ color: "#fef3c7" }}>
+                Active Desk Order: {activeBooking.booking_id}
+              </h2>
+              <p className="capacity-subtitle">
+                {formatToLongDate(activeBooking.event_date)} • {activeBooking.quantity} pass(es) • Total: ₹{activeBooking.total_amount.toFixed(2)}
+              </p>
+            </div>
+            <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+              <span
+                className={`badge-status ${
+                  activeBooking.payment_status.toLowerCase() === "paid" ? "paid" : "pending"
+                }`}
+              >
+                {activeBooking.payment_status.toUpperCase()}
+              </span>
+              <button
+                onClick={() => setActiveBooking(null)}
+                className="btn-capacity-cancel"
+                style={{ padding: "0.4rem 0.8rem", fontSize: "0.8rem" }}
+              >
+                Close Order View
+              </button>
+            </div>
+          </div>
+
+          {/* 1. CASH WORKFLOW PROMPT & ACTION */}
+          {activeBooking.payment_method.toUpperCase() === "CASH" && activeBooking.payment_status.toLowerCase() === "pending" && (
+            <div className="cash-collection-alert" role="alert">
+              <div className="cash-collection-header">
+                <div>
+                  <span className="cash-prompt-pill">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="12" y1="8" x2="12" y2="12"></line>
+                      <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                    collect cash from customer
+                  </span>
+                  <p style={{ marginTop: "0.5rem", color: "#fef3c7", fontSize: "0.95rem" }}>
+                    Physical cash due: <strong>₹{activeBooking.total_amount.toFixed(2)}</strong> for {activeBooking.quantity} entrance pass(es).
+                  </p>
+                </div>
+                <button
+                  onClick={() => handleConfirmCash(activeBooking.booking_id)}
+                  disabled={confirmingCashIds.has(activeBooking.booking_id)}
+                  className="btn-cash-collected"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                  {confirmingCashIds.has(activeBooking.booking_id)
+                    ? "Recording Cash Receipt..."
+                    : "Cash Collected"}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* 2. ONLINE PAYMENT QR SYSTEM 1 */}
+          {activeBooking.payment_method.toUpperCase() === "ONLINE" && activeBooking.payment_status.toLowerCase() === "pending" && (
+            <div className="payment-qr-container">
+              <div>
+                <span
+                  style={{
+                    display: "inline-block",
+                    padding: "0.3rem 0.8rem",
+                    borderRadius: "9999px",
+                    backgroundColor: "rgba(99, 102, 241, 0.2)",
+                    color: "#a5b4fc",
+                    border: "1px solid #6366f1",
+                    fontWeight: 800,
+                    fontSize: "0.8rem",
+                    letterSpacing: "0.05em",
+                    textTransform: "uppercase",
+                    marginBottom: "0.5rem",
+                  }}
+                >
+                  Customer Payment QR (QR System 1)
+                </span>
+                <h3 style={{ color: "#ffffff", fontSize: "1.2rem", margin: "0.25rem 0" }}>
+                  Scan to Pay: ₹{activeBooking.total_amount.toFixed(2)} ({Math.round(activeBooking.total_amount * 100)} paise)
+                </h3>
+                <p style={{ color: "#94a3b8", fontSize: "0.85rem", maxWidth: "460px" }}>
+                  Ask customer to scan this QR with any UPI app to pay the exact amount. This QR is strictly for payment collection.
+                </p>
+              </div>
+
+              {activeBooking.payment_qr_data_url ? (
+                <img
+                  src={activeBooking.payment_qr_data_url}
+                  alt="Customer Payment QR"
+                  className="payment-qr-image"
+                />
+              ) : (
+                <div style={{ color: "#fbbf24", padding: "1rem" }}>
+                  Loading payment QR code...
+                </div>
+              )}
+
+              <p style={{ color: "#cbd5e1", fontSize: "0.8rem", fontStyle: "italic" }}>
+                Entrance passes with security gate QR codes will be unlocked after online payment is confirmed.
+              </p>
+            </div>
+          )}
+
+          {/* 3. ISSUED PASSES WITH QR SYSTEM 2 (ENTRANCE QRS) */}
+          {activeBooking.payment_status.toLowerCase() === "paid" && (
+            <div>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                  gap: "0.75rem",
+                  margin: "1rem 0",
+                  padding: "0.75rem 1rem",
+                  backgroundColor: "rgba(16, 185, 129, 0.15)",
+                  border: "1px solid rgba(16, 185, 129, 0.4)",
+                  borderRadius: "12px",
+                }}
+              >
+                <span style={{ color: "#34d399", fontWeight: 700, fontSize: "0.95rem" }}>
+                  ✓ Payment confirmed! {activeBooking.tickets?.length || activeBooking.quantity} entrance pass(es) issued with gate admission QR codes.
+                </span>
+
+                <a
+                  href={getTicketPdfUrl(activeBooking.booking_id)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-pdf-download"
+                  style={{ padding: "0.5rem 1rem", fontSize: "0.85rem" }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                  </svg>
+                  Download Multi-Page Passes PDF
+                </a>
+              </div>
+
+              <div className="passes-issued-grid">
+                {(activeBooking.tickets || []).map((t, idx) => (
+                  <div key={t.ticket_number} className="pass-card-issued">
+                    <div style={{ display: "flex", justifyContent: "space-between", width: "100%", alignItems: "center" }}>
+                      <span style={{ fontSize: "0.75rem", color: "#94a3b8", fontWeight: 700 }}>
+                        PASS {idx + 1} OF {activeBooking.quantity}
+                      </span>
+                      <span className="pass-card-badge">{t.status.toUpperCase()}</span>
+                    </div>
+
+                    <div className="pass-card-serial">{t.ticket_number}</div>
+
+                    {t.qr_code_data_url ? (
+                      <img
+                        src={t.qr_code_data_url}
+                        alt={`QR Pass ${t.ticket_number}`}
+                        className="pass-card-qr-img"
+                      />
+                    ) : (
+                      <div style={{ width: 140, height: 140, display: "flex", alignItems: "center", justifyContent: "center", color: "#94a3b8" }}>
+                        QR Ready
+                      </div>
+                    )}
+
+                    <div style={{ fontSize: "0.75rem", color: "#cbd5e1", lineHeight: 1.3 }}>
+                      <strong>Entrance Gate Pass (QR System 2)</strong>
+                      <br />
+                      Valid for {formatToLongDate(t.event_date)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* 2. Embedded Counter Booking Form */}
       <div className="dashboard-card" style={{ marginTop: "2rem" }}>
         <h2 className="dashboard-card-title">
@@ -388,68 +679,117 @@ export const CounterOperatorDashboard: React.FC = () => {
                   <th>Payment Mode</th>
                   <th>Status</th>
                   <th>Booked At</th>
+                  <th>Actions & Cash Collection</th>
                   <th style={{ textAlign: "right" }}>Ticket PDF</th>
                 </tr>
               </thead>
               <tbody>
-                {bookings.map((b) => (
-                  <tr key={b.booking_id}>
-                    <td>
-                      <strong style={{ color: "#fef3c7" }}>
-                        {b.booking_id}
-                      </strong>
-                    </td>
-                    <td>{b.quantity} pass(es)</td>
-                    <td>₹{b.total_amount.toFixed(2)}</td>
-                    <td>
-                      <span className="capacity-date-day">
-                        {b.payment_method}
-                      </span>
-                    </td>
-                    <td>
-                      <span
-                        className={`badge-status ${
-                          b.payment_status.toLowerCase() === "paid"
-                            ? "paid"
-                            : "pending"
-                        }`}
-                      >
-                        {b.payment_status.toUpperCase()}
-                      </span>
-                    </td>
-                    <td>
-                      <span className="capacity-date-day">
-                        {b.created_at
-                          ? new Date(b.created_at).toLocaleString()
-                          : "N/A"}
-                      </span>
-                    </td>
-                    <td style={{ textAlign: "right" }}>
-                      <a
-                        href={getTicketPdfUrl(b.booking_id)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="btn-pdf-download"
-                      >
-                        <svg
-                          width="12"
-                          height="12"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
+                {bookings.map((b) => {
+                  const isCashPending =
+                    b.payment_method.toUpperCase() === "CASH" &&
+                    b.payment_status.toLowerCase() === "pending";
+                  const isPaid = b.payment_status.toLowerCase() === "paid";
+
+                  return (
+                    <tr key={b.booking_id}>
+                      <td>
+                        <strong style={{ color: "#fef3c7" }}>
+                          {b.booking_id}
+                        </strong>
+                      </td>
+                      <td>{b.quantity} pass(es)</td>
+                      <td>₹{b.total_amount.toFixed(2)}</td>
+                      <td>
+                        <span className="capacity-date-day">
+                          {b.payment_method}
+                        </span>
+                      </td>
+                      <td>
+                        <span
+                          className={`badge-status ${
+                            isPaid ? "paid" : "pending"
+                          }`}
                         >
-                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                          <polyline points="7 10 12 15 17 10"></polyline>
-                          <line x1="12" y1="15" x2="12" y2="3"></line>
-                        </svg>
-                        PDF
-                      </a>
-                    </td>
-                  </tr>
-                ))}
+                          {b.payment_status.toUpperCase()}
+                        </span>
+                      </td>
+                      <td>
+                        <span className="capacity-date-day">
+                          {b.created_at
+                            ? new Date(b.created_at).toLocaleString()
+                            : "N/A"}
+                        </span>
+                      </td>
+                      <td>
+                        {isCashPending ? (
+                          <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+                            <span
+                              className="badge-status pending"
+                              style={{
+                                fontSize: "0.7rem",
+                                padding: "0.2rem 0.5rem",
+                                display: "inline-block",
+                                textAlign: "center",
+                              }}
+                            >
+                              collect cash from customer
+                            </span>
+                            <button
+                              onClick={() => handleConfirmCash(b.booking_id)}
+                              disabled={confirmingCashIds.has(b.booking_id)}
+                              className="btn-cash-collected"
+                              style={{ padding: "0.35rem 0.75rem", fontSize: "0.75rem" }}
+                            >
+                              {confirmingCashIds.has(b.booking_id)
+                                ? "Confirming..."
+                                : "Cash Collected"}
+                            </button>
+                          </div>
+                        ) : isPaid ? (
+                          <button
+                            onClick={() => handleInspectBooking(b.booking_id)}
+                            className="btn-capacity-edit"
+                            style={{ padding: "0.35rem 0.65rem", fontSize: "0.75rem" }}
+                          >
+                            View Passes ({b.quantity})
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleInspectBooking(b.booking_id)}
+                            className="btn-capacity-edit"
+                            style={{ padding: "0.35rem 0.65rem", fontSize: "0.75rem" }}
+                          >
+                            Show Payment QR
+                          </button>
+                        )}
+                      </td>
+                      <td style={{ textAlign: "right" }}>
+                        <a
+                          href={getTicketPdfUrl(b.booking_id)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn-pdf-download"
+                        >
+                          <svg
+                            width="12"
+                            height="12"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                          </svg>
+                          PDF
+                        </a>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

@@ -13,6 +13,11 @@ import type {
   VerifyTicketResponse,
   ScanHistoryResponse,
   SecurityStatsResponse,
+  ConfirmCashPaymentResponse,
+  RazorpayOrderResponse,
+  CreatePaymentQrResponse,
+  VerifyPaymentRequest,
+  PaymentVerificationResponse,
 } from "../types";
 
 
@@ -449,4 +454,104 @@ export async function getSecurityStats(
   }
 
   return response.json();
+}
+
+export async function confirmCashPayment(
+  token: string,
+  bookingId: string,
+): Promise<ConfirmCashPaymentResponse> {
+  const response = await fetch(
+    `${API_BASE_URL}/bookings/${encodeURIComponent(bookingId)}/confirm-cash`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    },
+  );
+
+  const resData = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    const errorMsg =
+      resData.detail ||
+      resData.message ||
+      `Failed to confirm cash payment (Status ${response.status})`;
+    throw new ApiError(errorMsg, response.status, resData.error_code);
+  }
+
+  return resData;
+}
+
+export async function createRazorpayOrder(
+  bookingId: string,
+): Promise<RazorpayOrderResponse> {
+  const response = await fetch(`${API_BASE_URL}/payments/create-order`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ booking_id: bookingId }),
+  });
+
+  const resData = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    const errorMsg =
+      resData.detail ||
+      resData.message ||
+      `Failed to create Razorpay order (Status ${response.status})`;
+    throw new ApiError(errorMsg, response.status, resData.error_code);
+  }
+
+  return resData;
+}
+
+export async function createPaymentQr(
+  bookingId: string,
+): Promise<CreatePaymentQrResponse> {
+  const response = await fetch(`${API_BASE_URL}/payments/create-qr`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ booking_id: bookingId }),
+  });
+
+  const resData = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    const errorMsg =
+      resData.detail ||
+      resData.message ||
+      `Failed to generate payment QR (Status ${response.status})`;
+    throw new ApiError(errorMsg, response.status, resData.error_code);
+  }
+
+  return resData;
+}
+
+export async function verifyPayment(
+  payload: VerifyPaymentRequest,
+): Promise<PaymentVerificationResponse> {
+  const response = await fetch(`${API_BASE_URL}/payments/verify`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const resData = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    const errorMsg =
+      resData.detail ||
+      resData.message ||
+      `Payment verification failed (Status ${response.status})`;
+    throw new ApiError(errorMsg, response.status, resData.error_code);
+  }
+
+  return resData;
 }

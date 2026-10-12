@@ -107,6 +107,37 @@ def get_sold_ticket_count(db: Session, event_date: date) -> int:
     return int(result or 0)
 
 
+def get_active_booked_ticket_count(db: Session, event_date: date) -> int:
+    """
+    Calculates all active reserved and confirmed passes (pending + paid)
+    to protect against overselling under concurrent requests.
+    """
+    iso_str = event_date.isoformat()
+    readable_str = event_date.strftime("%d %B %Y")
+    readable_short = event_date.strftime("%d %b %Y")
+    day_prefix = f"{event_date.day} Oct%"
+
+    stmt = (
+        select(func.coalesce(func.sum(Booking.quantity), 0))
+        .where(
+            or_(
+                Booking.event_date == iso_str,
+                Booking.event_date == readable_str,
+                Booking.event_date == readable_short,
+                Booking.event_date.ilike(day_prefix),
+            )
+        )
+        .where(
+            func.lower(Booking.payment_status).in_(
+                ["pending", "paid", "confirmed", "success", "completed"]
+            )
+        )
+    )
+
+    result = db.scalar(stmt)
+    return int(result or 0)
+
+
 def _row_to_dict(capacity_row: DailyCapacity, sold_tickets: int) -> Dict[str, Any]:
     """
     Formats a DailyCapacity ORM row and its sold tickets into a response dict.

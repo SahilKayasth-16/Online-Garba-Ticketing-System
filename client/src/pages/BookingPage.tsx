@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { BookingForm } from "../components/BookingForm";
 import { LoadingSkeleton } from "../components/LoadingSkeleton";
 import { TicketConfirmation } from "../components/TicketConfirmation";
-import { ApiError, createBooking } from "../services/api";
+import { ApiError, createBooking, createPaymentQr } from "../services/api";
 import type { BookingData, ToastMessage } from "../types";
 import "../styles/bookingpage.css";
 
@@ -29,19 +29,29 @@ export const BookingPage: React.FC<BookingPageProps> = ({
     setIsProcessing(true);
 
     try {
-      const bookingResult = await createBooking({
+      let bookingResult = await createBooking({
         event_date: formData.event_date,
         quantity: formData.quantity,
         payment_method: formData.payment_method,
       });
 
+      if (formData.payment_method === "online" && !bookingResult.payment_qr_data_url) {
+        try {
+          const qrRes = await createPaymentQr(bookingResult.booking_id);
+          bookingResult = { ...bookingResult, payment_qr_data_url: qrRes.qr_data_url };
+        } catch {
+          // ignore error
+        }
+      }
+
       setBookingSuccessData(bookingResult);
       onShowToast({
         id: Date.now().toString(),
         type: "success",
-        title: "BOOKING CONFIRMED",
+        title: "BOOKING RESERVED",
         message: `Successfully reserved ${bookingResult.quantity} pass(es) for ${bookingResult.event_date}.`,
       });
+
     } catch (err: unknown) {
       if (err instanceof ApiError && err.errorCode === "EVENT_DATE_SOLD_OUT") {
         onShowToast({

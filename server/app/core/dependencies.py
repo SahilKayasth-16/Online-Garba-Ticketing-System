@@ -90,6 +90,29 @@ def require_security_staff(
     return current_user
 
 
-__all__ = ["get_db", "get_current_user", "require_super_admin", "require_security_staff"]
+def require_counter_staff(
+    current_user: User = Depends(get_current_user),
+) -> User:
+    """
+    Enforces that the current authenticated user has an authorized staff role
+    to collect and confirm cash bookings at the counter ('counter_operator', 'super_admin', 'event_admin').
+    Raises 403 Forbidden if called by any unauthorized user.
+    """
+    if current_user.role not in ("counter_operator", "super_admin", "event_admin"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Forbidden: Only authorized counter staff or administrators can confirm cash payments.",
+        )
+    return current_user
+
+
+__all__ = [
+    "get_db",
+    "get_current_user",
+    "require_super_admin",
+    "require_security_staff",
+    "require_counter_staff",
+]
+
 
 

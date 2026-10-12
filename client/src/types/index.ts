@@ -58,6 +58,15 @@ export interface Event {
   ticket_types?: TicketType[];
 }
 
+export interface TicketItem {
+  ticket_number: string;
+  ticket_token: string;
+  event_date: string;
+  status: string;
+  entry_status: string;
+  qr_code_data_url?: string | null;
+}
+
 export interface BookingData {
   booking_id: string;
   venue: string;
@@ -67,7 +76,59 @@ export interface BookingData {
   total_amount: number;
   payment_method: string;
   payment_status: string;
+  cash_collected_at?: string | null;
+  razorpay_order_id?: string | null;
+  razorpay_payment_id?: string | null;
+  razorpay_qr_id?: string | null;
+  payment_qr_payload?: string | null;
+  payment_qr_data_url?: string | null;
+  tickets?: TicketItem[];
   created_at?: string;
+}
+
+export interface ConfirmCashPaymentResponse {
+  success: boolean;
+  status: string;
+  message: string;
+  data: BookingData;
+}
+
+export interface RazorpayOrderResponse {
+  success: boolean;
+  configured: boolean;
+  booking_id: string;
+  amount_in_paise: number;
+  amount_in_rupees: number;
+  currency: string;
+  razorpay_order_id?: string | null;
+  razorpay_key_id?: string | null;
+  message: string;
+}
+
+export interface CreatePaymentQrResponse {
+  success: boolean;
+  configured: boolean;
+  booking_id: string;
+  amount_in_paise: number;
+  amount_in_rupees: number;
+  razorpay_qr_id?: string | null;
+  qr_image_url?: string | null;
+  qr_data_url?: string | null;
+  message: string;
+}
+
+export interface VerifyPaymentRequest {
+  booking_id: string;
+  razorpay_order_id: string;
+  razorpay_payment_id: string;
+  razorpay_signature: string;
+}
+
+export interface PaymentVerificationResponse {
+  success: boolean;
+  status: string;
+  message: string;
+  data?: BookingData | null;
 }
 
 export interface CreateBookingPayload {
@@ -76,6 +137,7 @@ export interface CreateBookingPayload {
   payment_method: "cash" | "online";
   venue?: string;
 }
+
 
 
 export interface ApiResponse<T> {

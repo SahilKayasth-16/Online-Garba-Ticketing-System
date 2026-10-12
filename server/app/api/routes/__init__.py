@@ -4,6 +4,7 @@ from app.api.routes.bookings import router as bookings_router
 from app.api.routes.capacities import router as capacities_router
 from app.api.routes.events import router as events_router
 from app.api.routes.health import router as health_router
+from app.api.routes.payments import router as payments_router
 from app.api.routes.security import router as security_router
 
 api_router = APIRouter()
@@ -13,6 +14,7 @@ api_router.include_router(bookings_router, prefix="/bookings", tags=["Bookings"]
 api_router.include_router(capacities_router, prefix="/capacities", tags=["Capacities"])
 api_router.include_router(auth_router, prefix="/auth", tags=["Auth"])
 api_router.include_router(security_router, prefix="/security", tags=["Security"])
+api_router.include_router(payments_router, prefix="/payments", tags=["Payments"])
 
 __all__ = ["api_router"]
 
